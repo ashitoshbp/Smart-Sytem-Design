@@ -319,11 +319,10 @@ body, html {
 }
 
 .main-content {
-  padding: 48px 24px 0 24px;
-  min-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 10px 0 0;
+  flex: 1;
+  overflow-y: auto;
+  height: calc(100vh - 64px);
 }
 
 .home-page {
