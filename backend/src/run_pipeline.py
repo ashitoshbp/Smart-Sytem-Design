@@ -25,14 +25,14 @@ def run_preprocessing():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     backend_dir = os.path.dirname(current_dir)
     data_dir = os.path.join(backend_dir, "data")
-    excel_path = os.path.join(os.path.dirname(backend_dir), "Incident_Report (1).xlsx")
+    csv_path = os.path.join(os.path.dirname(backend_dir), "modified_dataset.csv")
     output_path = os.path.join(data_dir, "processed_incidents.csv")
     
     # Ensure data directory exists
     os.makedirs(data_dir, exist_ok=True)
     
     # Create preprocessor and run
-    preprocessor = DataPreprocessor(excel_path)
+    preprocessor = DataPreprocessor(csv_path=csv_path)
     preprocessor.load_data()
     preprocessor.clean_data()
     preprocessor.save_processed_data(output_path)
@@ -42,6 +42,13 @@ def run_preprocessing():
     print("\nData preprocessing completed successfully!")
     print(f"Processed data saved to {output_path}")
     print(f"JSON version saved to {output_path.replace('.csv', '.json')}")
+    print("\nDataset Statistics:")
+    print(f"Total incidents: {stats['total_records']}")
+    print(f"Incident types: {', '.join(list(stats['incident_types'].keys())[:5])}...")
+    
+    # Get date range if available in the stats
+    if 'date_range' in stats:
+        print(f"Date range: {stats['date_range'][0]} to {stats['date_range'][1]}")
     
     return output_path.replace('.csv', '.json')
 
@@ -76,13 +83,21 @@ def test_query(vector_store_dir):
     retriever = IncidentRetriever(vector_store_dir, model_name="mistral")
     retriever.load_resources()
     
-    # Process a sample query
-    query = "What are the top 3 most common incident types?"
-    print(f"\nProcessing query: '{query}'")
-    response = retriever.process_query(query, k=10)
+    # Process sample queries
+    test_queries = [
+        "What are the top 3 most common incident types in Mangalore?",
+        "Which taluk has the highest number of incidents?",
+        "What is the average time taken to resolve incidents?",
+        "How many incidents were reported in the last month of the dataset?"
+    ]
     
-    print(f"\nAnswer: {response['answer']}")
-    print(f"Number of relevant chunks: {response['num_chunks_retrieved']}")
+    for query in test_queries:
+        print(f"\nProcessing query: '{query}'")
+        response = retriever.process_query(query, k=10)
+        
+        print(f"\nAnswer: {response['answer']}")
+        print(f"Number of relevant chunks: {response['num_chunks_retrieved']}")
+        print("-" * 50)
     
     return True
 
@@ -147,6 +162,8 @@ def main():
         return 0
     except Exception as e:
         print(f"Error during pipeline: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return 1
 
 if __name__ == "__main__":

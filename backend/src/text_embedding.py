@@ -58,20 +58,49 @@ class TextProcessor:
         self.chunks = []
         
         for i, record in enumerate(self.data):
-            # Create a text representation of the record
-            text = f"Incident ID: {i}\n"
+            # Create a comprehensive text representation of the record
+            text = f"Incident ID: {record.get('sl_no', i)}\n"
             text += f"Type: {record.get('incident_type', 'Unknown')}\n"
-            text += f"Description: {record.get('description', 'No description')}\n"
             text += f"Location: {record.get('location', 'Unknown location')}\n"
-            text += f"Status: {record.get('status', 'Unknown status')}\n"
+            text += f"Taluk: {record.get('taluk', 'Unknown')}\n"
             
-            # Add dates if available
-            if 'open_date' in record:
-                text += f"Open Date: {record['open_date']}\n"
-            if 'close_date' in record:
-                text += f"Close Date: {record['close_date']}\n"
-            if 'duration_hours' in record:
-                text += f"Duration (hours): {record.get('duration_hours', 'Unknown')}\n"
+            # Add date information
+            if 'received_date_time' in record:
+                text += f"Received Date/Time: {record['received_date_time']}\n"
+            if 'incident_reported_at' in record:
+                text += f"Incident Reported At: {record['incident_reported_at']}\n"
+            
+            # Add action information
+            if 'action_taken_by' in record and record['action_taken_by']:
+                text += f"Action Taken By: {record['action_taken_by']}\n"
+            if 'action_date_time' in record and record['action_date_time']:
+                text += f"Action Date/Time: {record['action_date_time']}\n"
+            if 'action_remarks' in record and record['action_remarks']:
+                text += f"Action Remarks: {record['action_remarks']}\n"
+            if 'time_taken_to_take_action' in record and record['time_taken_to_take_action']:
+                text += f"Time Taken to Take Action: {record['time_taken_to_take_action']}\n"
+            
+            # Add closing information
+            if 'closed_by_officer' in record and record['closed_by_officer']:
+                text += f"Closed By: {record['closed_by_officer']}\n"
+            if 'closed_at' in record and record['closed_at']:
+                text += f"Closed At: {record['closed_at']}\n"
+            if 'closed_remarks' in record and record['closed_remarks']:
+                text += f"Closed Remarks: {record['closed_remarks']}\n"
+            if 'time_taken_to_close' in record and record['time_taken_to_close']:
+                text += f"Time Taken to Close: {record['time_taken_to_close']}\n"
+            
+            # Add source information
+            if 'info_source' in record and record['info_source']:
+                text += f"Information Source: {record['info_source']}\n"
+            if 'info_phone' in record and record['info_phone']:
+                text += f"Information Phone: {record['info_phone']}\n"
+            
+            # Add calculated fields if available
+            if 'action_time_hours' in record and record['action_time_hours'] is not None:
+                text += f"Action Time (hours): {record.get('action_time_hours', 'Unknown')}\n"
+            if 'resolution_time_hours' in record and record['resolution_time_hours'] is not None:
+                text += f"Resolution Time (hours): {record.get('resolution_time_hours', 'Unknown')}\n"
                 
             # Split the text into chunks
             doc_chunks = text_splitter.create_documents([text], [{"source": i, "record": record}])

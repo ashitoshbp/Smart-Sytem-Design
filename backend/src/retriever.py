@@ -104,7 +104,7 @@ class IncidentRetriever:
         template = """
         You are an AI assistant for the Mangalore Smart City Incident Management System.
         
-        Use the following incident data to answer the user's question. If you don't know the answer, say "I don't have enough information to answer this question."
+        Use the following incident data to answer the user's question. The data includes information about various incidents in Mangalore, including landslides, floods, tree falls, and other emergencies.
         
         INCIDENT DATA:
         {context}
@@ -112,6 +112,14 @@ class IncidentRetriever:
         USER QUESTION: {query}
         
         Provide a clear, concise, and accurate answer based only on the information provided above. Include relevant statistics or data points if available.
+        
+        If the question asks about time-related information (like resolution times, response times, etc.), be sure to include that in your answer.
+        
+        If the question asks about specific locations or taluks, provide that geographic information in your answer.
+        
+        If the question asks for a comparison between different incident types, locations, or time periods, structure your answer to clearly show the comparison.
+        
+        If you don't know the answer or the information is not in the provided data, say "I don't have enough information to answer this question."
         
         ANSWER:
         """
@@ -172,7 +180,7 @@ if __name__ == "__main__":
     retriever.load_resources()
     
     # Process a sample query
-    query = "What are the top 3 most common incident types?"
+    query = "What are the top 3 most common incident types in Mangalore?"
     response = retriever.process_query(query, k=10)
     
     print(f"\nQuery: {query}")

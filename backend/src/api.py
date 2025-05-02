@@ -1,5 +1,6 @@
 import os
 import json
+import pandas as pd
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -112,35 +113,58 @@ async def get_stats():
     """Get statistics about the incident data"""
     try:
         # Load processed data
-        json_path = os.path.join(data_dir, "processed_incidents.json")
-        with open(json_path, 'r') as f:
-            data = json.load(f)
+        csv_path = os.path.join(data_dir, "processed_incidents.csv")
+        
+        # Use pandas for better analysis
+        df = pd.read_csv(csv_path)
         
         # Calculate basic stats
-        incident_types = {}
-        statuses = {}
-        locations = {}
+        incident_types = df['incident_type'].value_counts().to_dict()
         
-        for record in data:
-            # Count incident types
-            inc_type = record.get("incident_type", "Unknown")
-            incident_types[inc_type] = incident_types.get(inc_type, 0) + 1
+        # Get taluk statistics
+        taluk_counts = df['taluk'].value_counts().to_dict()
+        
+        # Get source statistics
+        source_counts = df['info_source'].value_counts().to_dict() if 'info_source' in df.columns else {}
+        
+        # Calculate time-based statistics
+        time_stats = {}
+        
+        # Convert date columns to datetime if they exist
+        date_columns = ['received_date_time', 'action_date_time', 'closed_at', 'incident_reported_at']
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+        
+        # Get date range
+        if 'received_date_time' in df.columns:
+            time_stats['first_incident'] = df['received_date_time'].min().strftime('%Y-%m-%d') if not pd.isna(df['received_date_time'].min()) else None
+            time_stats['last_incident'] = df['received_date_time'].max().strftime('%Y-%m-%d') if not pd.isna(df['received_date_time'].max()) else None
+        
+        # Calculate average resolution times if available
+        if 'action_time_hours' in df.columns:
+            time_stats['avg_action_time_hours'] = round(df['action_time_hours'].mean(), 2)
             
-            # Count statuses
-            status = record.get("status", "Unknown")
-            statuses[status] = statuses.get(status, 0) + 1
-            
-            # Count locations
-            location = record.get("location", "Unknown")
-            locations[location] = locations.get(location, 0) + 1
+        if 'resolution_time_hours' in df.columns:
+            time_stats['avg_resolution_time_hours'] = round(df['resolution_time_hours'].mean(), 2)
+        
+        # Monthly incident counts if date column exists
+        monthly_counts = {}
+        if 'received_date_time' in df.columns:
+            df['month_year'] = df['received_date_time'].dt.strftime('%Y-%m')
+            monthly_counts = df['month_year'].value_counts().sort_index().to_dict()
         
         return {
-            "total_incidents": len(data),
+            "total_incidents": len(df),
             "incident_types": incident_types,
-            "statuses": statuses,
-            "locations": locations
+            "taluk_stats": taluk_counts,
+            "source_stats": source_counts,
+            "time_stats": time_stats,
+            "monthly_counts": monthly_counts
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
 
 if __name__ == "__main__":
